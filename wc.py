@@ -7,6 +7,38 @@ def main() -> None:
                 and characters in the specified files.""",
     )
 
+    # --- Options ---
+    parser.add_argument(
+        "-c",
+        "--bytes",
+        action="store_true",
+        help="Print the bytes count(s)"
+    )
+    parser.add_argument(
+        "-m",
+        "--chars",
+        action="store_true",
+        help="Print the character count(s)"
+    )
+    parser.add_argument(
+        "-l",
+        "--lines",
+        action="store_true",
+        help="Print the newline count(s)"
+    )
+    parser.add_argument(
+        "-L",
+        "--max-line-length",
+        action="store_true",
+        help="Print the maximum display width"
+    )
+    parser.add_argument(
+        "-w",
+        "--words",
+        action="store_true",
+        help="Print the word count(s)"
+    )
+
     parser.add_argument(
         "files",
         nargs="*",
