@@ -1,30 +1,38 @@
 import argparse
 import sys
+from dataclasses import dataclass
 
 
-def display_data(data: list[dict[str, int]]) -> None:
+@dataclass
+class Stats:
+    name: str
+    lines: int = 0
+    words: int = 0
+    chars: int = 0
+    bytes: int = 0
+    max_line_length: int = 0
+
+
+def display_data(data: list[Stats]) -> None:
     pass
 
 
 def process_files(options: argparse.Namespace) -> None:
-    all_stats: list[dict[str, int]] = []
+    all_stats: list[Stats] = []
 
     for file_name in options.files:
-        file_stats: dict[str, int] = {
-            "lines": 0, "words": 0, "chars": 0, "bytes": 0, "max_line_length": 0
-        }
+        file_stats: Stats = Stats(name=file_name)
 
         try:
             with open(file_name) as file:
                 for line in file.readlines():
-                    file_stats["lines"] += 1
-                    file_stats["words"] += len(line.split())
-                    file_stats["chars"] += len(line)
-                    file_stats["bytes"] += len(line.encode())
+                    file_stats.lines += 1
+                    file_stats.words += len(line.split())
+                    file_stats.chars += len(line)
+                    file_stats.bytes += len(line.encode())
                     # Tabs are expanded because the Unix wc tool counts the display length of the lines
-                    file_stats["max_line_length"] = max(
-                        file_stats["max_line_length"],
-                        len(line.expandtabs())
+                    file_stats.max_line_length = max(
+                        file_stats.max_line_length, len(line.expandtabs())
                     )
         except Exception as e:
             print(f"wc: {file_name}: {e}", file=sys.stderr)
@@ -32,14 +40,15 @@ def process_files(options: argparse.Namespace) -> None:
 
         all_stats.append(file_stats)
 
-    total = {
-        "lines": sum(stats["lines"] for stats in all_stats),
-        "words": sum(stats["words"] for stats in all_stats),
-        "chars": sum(stats["chars"] for stats in all_stats),
-        "bytes": sum(stats["bytes"] for stats in all_stats),
-        "max_line_length": max(stats["max_line_length"] for stats in all_stats)
-    }
-    all_stats.append(total)
+    total_stats: Stats = Stats(
+        name="total",
+        lines=sum(stats.lines for stats in all_stats),
+        words=sum(stats.words for stats in all_stats),
+        chars=sum(stats.chars for stats in all_stats),
+        bytes=sum(stats.bytes for stats in all_stats),
+        max_line_length=max(stats.max_line_length for stats in all_stats)
+    )
+    all_stats.append(total_stats)
 
     display_data(all_stats)
 
@@ -54,10 +63,16 @@ and characters in the specified files.""",
 
     # --- Options ---
     parser.add_argument(
-        "-c",
-        "--bytes",
+        "-l",
+        "--lines",
         action="store_true",
-        help="Print the bytes count(s)"
+        help="Print the newline count(s)"
+    )
+    parser.add_argument(
+        "-w",
+        "--words",
+        action="store_true",
+        help="Print the word count(s)"
     )
     parser.add_argument(
         "-m",
@@ -66,10 +81,16 @@ and characters in the specified files.""",
         help="Print the character count(s)"
     )
     parser.add_argument(
-        "-l",
-        "--lines",
+        "-c",
+        "--bytes",
         action="store_true",
-        help="Print the newline count(s)"
+        help="Print the bytes count(s)"
+    )
+    parser.add_argument(
+        "-L",
+        "--max-line-length",
+        action="store_true",
+        help="Print the maximum display width"
     )
     parser.add_argument(
         "--total",
@@ -89,18 +110,6 @@ WHEN can be:
         help="""Read input from the files specified by NUL-terminated names in file F.
 If F is \"-\" then read names from standard input."""
     )
-    parser.add_argument(
-        "-L",
-        "--max-line-length",
-        action="store_true",
-        help="Print the maximum display width"
-    )
-    parser.add_argument(
-        "-w",
-        "--words",
-        action="store_true",
-        help="Print the word count(s)"
-    )
 
     parser.add_argument(
         "files",
@@ -112,17 +121,19 @@ If F is \"-\" then read names from standard input."""
     args: argparse.Namespace = parser.parse_args()
 
     if args.files0_from:
-        if args.files0_from == "-":
-            args.files0_from = "sys.stdin"
+        file_path: str | int = args.files0_from
+        if file_path == "-":
+            file_path = 0  # File descriptor for sys.stdin
     
         try:
-            with open(args.files0_from, "rb") as files0_from:
+            with open(file_path, "rb") as files0_from:
                 file_names: list[str] = [
-                    name.decode("utf-8", "replace")
-                    for name in files0_from.read().split(b"\x00")  # Split on 0 byte (ASCII NUL)
+                    file_name.decode("utf-8", "replace")
+                    for file_name in files0_from.read().split(b"\0")  # Split on 0 byte (ASCII NUL)
+                    if file_name  # Filter out trailing empty strings
                 ]
         except Exception as e:
-            print(f"wc: {args.files0_from}: {e}", file=sys.stderr)
+            print(f"wc: {file_path if file_path != "-" else "standard input"}: {e}", file=sys.stderr)
             sys.exit(1)
 
         args.files = file_names
