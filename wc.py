@@ -2,7 +2,7 @@
 Word Count (wc) Clone
 =====================
 
-This module provides a command-line utility to count lines, words, characters, bytes, and maximum line lengths in files, mimicking the Unix 'wc' command.
+This module provides a command-line utility to count lines, words, characters, bytes, and maximum line lengths in files, mimicking the Unix "wc" command.
 
 Usage:
     py wc.py [option ...] [file ...]
@@ -41,15 +41,15 @@ class Stats:
     max_line_length: int = 0
 
 
-def display_data(data: list[Stats]) -> None:
+def display_data(data: list[dict[str, str | int]]) -> None:
     """
     Format and print the calculated statistics to the console.
 
     Calculates the total for each metric if multiple files were processed
     and aligns the output for readability.
 
-    :param data: A list of Stats objects, each representing a file's statistics.
-    :type data: list[Stats]
+    :param data: A list of Stats objects, each representing a file"s statistics.
+    :type data: list[dict[str, str | int]]
     :return: None
     """
     pass
@@ -75,27 +75,47 @@ def process_files(options: argparse.Namespace) -> None:
                     file_stats.words += len(line.split())
                     file_stats.chars += len(line)
                     file_stats.bytes += len(line.encode())
-                    # Tabs are expanded because the Unix wc tool counts the display length of the lines
+                    # Tabs are expanded because it counts the display length of the lines
                     file_stats.max_line_length = max(
                         file_stats.max_line_length, len(line.expandtabs())
                     )
         except Exception as e:
             print(f"wc: {file_name}: {e}", file=sys.stderr)
-            sys.exit(1)
+            sys.exit()
 
         all_stats.append(file_stats)
 
-    total_stats: Stats = Stats(
-        name="total",
-        lines=sum(stats.lines for stats in all_stats),
-        words=sum(stats.words for stats in all_stats),
-        chars=sum(stats.chars for stats in all_stats),
-        bytes=sum(stats.bytes for stats in all_stats),
-        max_line_length=max(stats.max_line_length for stats in all_stats)
-    )
-    all_stats.append(total_stats)
+    if options.total != "never":
+        total_stats: Stats = Stats(
+            name="total",
+            lines=sum(stats.lines for stats in all_stats),
+            words=sum(stats.words for stats in all_stats),
+            chars=sum(stats.chars for stats in all_stats),
+            bytes=sum(stats.bytes for stats in all_stats),
+            max_line_length=max(stats.max_line_length for stats in all_stats)
+        )
+        if options.total == "only":
+            all_stats = [total_stats]
+        else:
+            all_stats.append(total_stats)
 
-    display_data(all_stats)
+    fields: list[str] = ["name"]
+    if options.lines:
+        fields.append("lines")
+    if options.words:
+        fields.append("words")
+    if options.bytes:
+        fields.append("bytes")
+    if options.chars:
+        fields.append("chars")
+    if options.max_line_length:
+        fields.append("max_line_length")
+
+    filtered_stats: list[dict[str, str | int]] = [
+        {field: getattr(stat, field) for field in fields}
+        for stat in all_stats
+    ]
+    display_data(filtered_stats)
 
 
 def main() -> None:
@@ -152,9 +172,9 @@ and characters in the specified files.""",
         metavar="WHEN",
         help="""Print a total line when outputting more than one file.
 WHEN can be:
-    'always' - always print a total
-    'only' - only print the total
-    'never' - never print the total""",
+    "always" - always print a total
+    "only" - only print the total
+    "never" - never print the total""",
         default="always"
     )
     parser.add_argument(
@@ -174,6 +194,12 @@ If F is \"-\" then read names from standard input."""
 
     args: argparse.Namespace = parser.parse_args()
 
+    # If no options are provided, default to lines, words, and bytes
+    if not any((args.lines, args.words, args.chars, args.bytes, args.max_line_length)):
+        args.lines = True
+        args.words = True
+        args.bytes = True
+
     if args.files0_from:
         file_path: str | int = args.files0_from
         if file_path == "-":
@@ -188,7 +214,7 @@ If F is \"-\" then read names from standard input."""
                 ]
         except Exception as e:
             print(f"wc: {file_path if file_path != "-" else "standard input"}: {e}", file=sys.stderr)
-            sys.exit(1)
+            sys.exit()
 
         args.files = file_names
 
