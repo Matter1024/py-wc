@@ -55,7 +55,7 @@ def display_data(data: list[list[str | int]]) -> None:
     SPACING: int = 3
     column_pad_lengths: list[int] = [
         max(len(str(value)) for value in column) + SPACING
-        for column in zip(*data)
+        for column in zip(*data)  # Transposes data
     ]
 
     for file_info in data:
@@ -78,7 +78,8 @@ def process_files(options: argparse.Namespace) -> None:
         file_stats: Stats = Stats(name=file_name)
 
         try:
-            with open(file_name, "r", encoding="utf-8") as file:
+            print("Now reading data from standard input. To stop, press Ctrl + Z twice and enter")
+            with open(0 if file_name == "standard input" else file_name, "r", encoding="utf-8") as file:
                 for line in file.readlines():
                     file_stats.lines += 1
                     file_stats.words += len(line.split())
@@ -198,7 +199,7 @@ If F is \"-\" then read names from standard input."""
     parser.add_argument(
         "files",
         nargs="*",
-        default=["sys.stdin"],
+        default=["standard input"],
         help="Input file(s) to process. If no files are specified, or if \"-\" is provided, read from standard input."
     )
 
@@ -213,7 +214,7 @@ If F is \"-\" then read names from standard input."""
     if args.files0_from:
         file_path: str | int = args.files0_from
         if file_path == "-":
-            file_path = 0  # File descriptor for sys.stdin
+            file_path = 0  # File descriptor for standard input
     
         try:
             with open(file_path, "rb") as files0_from:
