@@ -41,18 +41,27 @@ class Stats:
     max_line_length: int = 0
 
 
-def display_data(data: list[dict[str, str | int]]) -> None:
+def display_data(data: list[list[str | int]]) -> None:
     """
     Format and print the calculated statistics to the console.
 
     Calculates the total for each metric if multiple files were processed
     and aligns the output for readability.
 
-    :param data: A list of Stats objects, each representing a file"s statistics.
-    :type data: list[dict[str, str | int]]
+    :param data: A list of Statistics, each representing a file's statistics.
+    :type data: list[list[str | int]]
     :return: None
     """
-    pass
+    SPACING: int = 3
+    column_pad_lengths: list[int] = [
+        max(len(str(value)) for value in column) + SPACING
+        for column in zip(*data)
+    ]
+
+    for file_info in data:
+        for column_index, value in enumerate(file_info):
+            print(end=f"{value:>{column_pad_lengths[column_index]}}")
+        print()
 
 
 def process_files(options: argparse.Namespace) -> None:
@@ -69,7 +78,7 @@ def process_files(options: argparse.Namespace) -> None:
         file_stats: Stats = Stats(name=file_name)
 
         try:
-            with open(file_name) as file:
+            with open(file_name, "r", encoding="utf-8") as file:
                 for line in file.readlines():
                     file_stats.lines += 1
                     file_stats.words += len(line.split())
@@ -99,7 +108,7 @@ def process_files(options: argparse.Namespace) -> None:
         else:
             all_stats.append(total_stats)
 
-    fields: list[str] = ["name"]
+    fields: list[str] = []
     if options.lines:
         fields.append("lines")
     if options.words:
@@ -110,9 +119,10 @@ def process_files(options: argparse.Namespace) -> None:
         fields.append("chars")
     if options.max_line_length:
         fields.append("max_line_length")
+    fields.append("name")
 
-    filtered_stats: list[dict[str, str | int]] = [
-        {field: getattr(stat, field) for field in fields}
+    filtered_stats: list[list[str | int]] = [
+        [getattr(stat, field) for field in fields]
         for stat in all_stats
     ]
     display_data(filtered_stats)
@@ -218,7 +228,6 @@ If F is \"-\" then read names from standard input."""
 
         args.files = file_names
 
-    print(args)
     process_files(args)
     
 

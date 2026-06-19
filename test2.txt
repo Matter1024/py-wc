@@ -1,0 +1,41 @@
+py-wc 📝
+A lightweight, modern Python implementation of the Unix wc (word count) utility. Built as a fun project to explore CLI development, dataclasses, and reStructuredText documentation.
+
+
+✨ Features
+Fast Counting: Efficiently counts lines, words, characters, and bytes.
+CLI Options: Supports standard flags (-l, -w, -c, -m).
+Standard Input: Reads from stdin if no file is provided.
+Multiple Files: Aggregates totals when processing multiple inputs.
+🚀 Quick Start
+Installation
+Clone the repository and ensure you have Python 3.9+ installed.
+bash
+git clone https://github.com
+cd py-wc
+Use code with caution.
+Usage
+Run the script directly using Python:
+bash
+# Count lines in a file
+python wc.py -l filename.txt
+
+# Read from standard input
+echo "Hello World" | python wc.py -w
+Use code with caution.
+🛠️ Development
+Documentation
+This project uses reST (reStructuredText) for internal docstrings. You can generate full HTML documentation using Sphinx:
+bash
+cd docs
+make html
+Use code with caution.
+Testing
+Run the suite of unit tests to ensure compatibility with the original wc tool:
+bash
+pytest tests/
+Use code with caution.
+📄 License
+Distributed under the MIT License. See LICENSE for more information.
+👤 Contact
+Your Name - @your_twitter - email@example.com
